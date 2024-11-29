@@ -5,7 +5,7 @@
  ============================================================================
  Name        : taas-banks.cpp
  Author      : Matthias Thimm
- Version     : 1.0.1
+ Version     : 1.0.2
  Copyright   : GPL3
  Description : The taas-banks solver for abstract argumentation.
 
@@ -88,8 +88,89 @@ void solve_banks(struct TaskSpecification *task, struct AAF* aaf) {
 }
 /* ============================================================================================================== */
 /* ============================================================================================================== */
+bool solve_baseline_no_comp_ds(struct TaskSpecification *task, struct AAF* aaf, int arg) {
+    // Base encoding for stable semantics
+    IpasirSolver solver;
+    sat__init(solver, aaf->number_of_arguments);
+    // add arg
+    sat__addClause1(solver,-arg);
+    // Rules for stable semantics
+    for (int a = 1; a <= aaf->number_of_arguments; a++) {
+        if (aaf->number_of_attackers[a-1] == 0) {
+            sat__addClause1(solver,a);
+        } else {
+            std::vector<int> attackersOr;
+            for(GSList* node2 = aaf->parents[a-1]; node2 != NULL; node2 = node2->next){
+                attackersOr.push_back(*(int*)node2->data);
+                sat__addClause2(solver,-a,-*(int*)node2->data);
+            }
+            attackersOr.push_back(a);
+            attackersOr.push_back(0);
+            sat__addClauseZTVec(solver,attackersOr);
+        }
+    }
+    return ( sat__solve(solver) == 10 ? false : true );
+}
+
+bool solve_baseline_no_comp_dc(struct TaskSpecification *task, struct AAF* aaf, int arg) {
+    // Base encoding for stable semantics
+    IpasirSolver solver;
+    sat__init(solver, aaf->number_of_arguments);
+    // add arg
+    sat__addClause1(solver,arg);
+    // Rules for stable semantics
+    for (int a = 1; a <= aaf->number_of_arguments; a++) {
+        if (aaf->number_of_attackers[a-1] == 0) {
+            sat__addClause1(solver,a);
+        } else {
+            std::vector<int> attackersOr;
+            for(GSList* node2 = aaf->parents[a-1]; node2 != NULL; node2 = node2->next){
+                attackersOr.push_back(*(int*)node2->data);
+                sat__addClause2(solver,-a,-*(int*)node2->data);
+            }
+            attackersOr.push_back(a);
+            attackersOr.push_back(0);
+            sat__addClauseZTVec(solver,attackersOr);
+        }
+    }
+    return ( sat__solve(solver) == 10 ? true : false );
+}
+
 void solve_baseline_no_comp(struct TaskSpecification *task, struct AAF* aaf) {
-    printf("BASELINE-NO-COMP\n");
+    if(strcmp(task->problem,"BATCH-ST") == 0){
+        std::vector<std::string> tasks;
+        std::vector<int> args;
+        for(int j = 0; j < task->number_of_additional_arguments; j++){
+            tasks.push_back(task->additional_keys[j]);
+            args.push_back(atoi(task->additional_values[j]));
+        }
+        for(int i = 0; i < tasks.size(); i++){
+            if(tasks[i].compare("DS") == 0){
+                std::cout << ( solve_baseline_no_comp_ds(task,aaf,args[i]) ? "YES" : "NO" ) << std::endl;
+            }else if(tasks[i].compare("DC") == 0){
+                std::cout << ( solve_baseline_no_comp_dc(task,aaf,args[i]) ? "YES" : "NO" ) << std::endl;
+            }else {
+                std::cout << "UNKNOWN QUERY" << std::endl;
+            }
+        }
+      return;
+    }else if(strcmp(task->problem,"DS-ST") == 0){
+        int arg = 0;
+        for(int j = 0; j < task->number_of_additional_arguments; j++){
+            if(strcmp(task->additional_keys[j],"-a") == 0)
+                arg = atoi(task->additional_values[j]);
+        }
+        std::cout << ( solve_baseline_no_comp_ds(task,aaf,arg) ? "YES" : "NO" ) << std::endl;
+        return;
+    }else if(strcmp(task->problem,"DC-ST") == 0){
+        int arg = 0;
+        for(int j = 0; j < task->number_of_additional_arguments; j++){
+            if(strcmp(task->additional_keys[j],"-a") == 0)
+                arg = atoi(task->additional_values[j]);
+        }
+        std::cout << ( solve_baseline_no_comp_dc(task,aaf,arg) ? "YES" : "NO" ) << std::endl;
+        return;
+    }
 }
 
 /* ============================================================================================================== */
@@ -221,7 +302,7 @@ void solve(struct TaskSpecification *task, struct AAF* aaf) {
 int main(int argc, char *argv[]){
   // General solver information
 	struct SolverInformation *info = taas__solverinformation(
-			(char*) "taas-banks v1.0.1 (2024-11-29)\nMatthias Thimm (matthias.thimm@fernuni-hagen.de)",
+			(char*) "taas-banks v1.0.2 (2024-11-29)\nMatthias Thimm (matthias.thimm@fernuni-hagen.de)",
 			(char*) "[i23]",
 			(char*) "[DS-ST,DC-ST,BATCH-ST]"
 		);
