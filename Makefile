@@ -15,7 +15,7 @@ clean:
 	rm -f $(TARGET) *.o
 
 taas-banks: taas-banks.o
-	${LINK} -o $@ taas-fudge.o `pkg-config --libs glib-2.0` -lm -L$(IPASIRLIBDIR) -l$(IPASIRSOLVER)
+	${LINK} -o $@ taas-banks.o `pkg-config --libs glib-2.0` -lm -L$(IPASIRLIBDIR) -l$(IPASIRSOLVER)
 
 taas-banks.o: taas-banks.cpp ipasir.h
 	$(CC) $(CFLAGS) -c taas-banks.cpp `pkg-config --cflags glib-2.0`

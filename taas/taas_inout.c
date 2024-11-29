@@ -14,6 +14,7 @@
 /**
  * General solver information
  */
+#include <cstdlib>
 struct SolverInformation{
     char* description;
     char* formats;
@@ -28,6 +29,11 @@ struct TaskSpecification{
   char* problem;
   /** The file path */
   char* file;
+  /** solver_type=1 the banks compilation approach
+    * solver_type=2 the baseline "no compilation" approach
+    * solver_type=3 the baseline "store all extensions explictly" approach
+    */
+  int solver_type;
   /** additional arguments */
   int number_of_additional_arguments;
   char** additional_keys;
@@ -61,6 +67,7 @@ struct TaskSpecification* taas__cmd_handle(int argc, char *argv[], struct Solver
   task->number_of_additional_arguments = 0;
   task->additional_keys = (char**) malloc(sizeof(char*));
   task->additional_values = (char**) malloc(sizeof(char*));
+  task->solver_type = 1;
   int param = 0;
   for(int i = 1; i < argc; i++){
     if(strcmp(argv[i],"-p") == 0){
@@ -70,6 +77,11 @@ struct TaskSpecification* taas__cmd_handle(int argc, char *argv[], struct Solver
     }
     if(strcmp(argv[i],"-f") == 0){
       task->file = argv[++i];
+      param++;
+      continue;
+    }
+    if(strcmp(argv[i],"-t") == 0){
+      task->solver_type = atoi(argv[++i]);
       param++;
       continue;
     }
@@ -143,10 +155,10 @@ void taas__readFile_i23(char* path, struct AAF* aaf){
   // all bits initially zero
   bitset__unsetAll(aaf->loops);
   // initialise arguments
-  for(int idx = 0; idx < aaf->number_of_arguments; idx++){
-    aaf->children[idx] = NULL;
-    aaf->parents[idx] = NULL;
-    aaf->number_of_attackers[idx] = 0;
+  for(int idx = 1; idx <= aaf->number_of_arguments; idx++){
+    aaf->children[idx-1] = NULL;
+    aaf->parents[idx-1] = NULL;
+    aaf->number_of_attackers[idx-1] = 0;
   }
   while ((read = getline(&row, &len, fp)) != -1) {
     if(strcmp(trimwhitespace(row),"") == 0)
@@ -160,16 +172,16 @@ void taas__readFile_i23(char* path, struct AAF* aaf){
 	row[idx] = 0;
     int* idx1 = (int*) malloc(sizeof(int));
     int* idx2 = (int*) malloc(sizeof(int));
-    *idx1 = atoi(row)-1;
-	*idx2 = atoi(&row[idx+1])-1;
-    aaf->children[*idx1] = g_slist_prepend(aaf->children[*idx1], idx2);
-    aaf->parents[*idx2] = g_slist_prepend(aaf->parents[*idx2], idx1);
-    aaf->number_of_attackers[*idx2]++;
+    *idx1 = atoi(row);
+	*idx2 = atoi(&row[idx+1]);
+    aaf->children[*idx1-1] = g_slist_prepend(aaf->children[*idx1-1], idx2);
+    aaf->parents[*idx2-1] = g_slist_prepend(aaf->parents[*idx2-1], idx1);
+    aaf->number_of_attackers[*idx2-1]++;
     // if an argument is attacked, it is not initial
-	bitset__unset(aaf->initial,*idx2);
+	bitset__unset(aaf->initial,*idx2-1);
     // check for self-attacking arguments
     if(*idx1 == *idx2){
-      bitset__set(aaf->loops,*idx1);
+      bitset__set(aaf->loops,*idx1-1);
     }
   }
   fclose(fp);

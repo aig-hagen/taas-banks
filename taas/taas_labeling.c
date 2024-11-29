@@ -58,15 +58,15 @@ void taas__lab_randomize(struct Labeling* lab){
  */
 int taas__lab_get_label(struct Labeling* lab, int arg){
   if(lab->twoValued){
-    if(bitset__get(lab->in,arg))
+    if(bitset__get(lab->in,arg-1))
       return LAB_IN;
     else return LAB_OUT;
   }
-  if(bitset__get(lab->in,arg) && !bitset__get(lab->out,arg))
+  if(bitset__get(lab->in,arg-1) && !bitset__get(lab->out,arg-1))
     return LAB_IN;
-  if(!bitset__get(lab->in,arg) && bitset__get(lab->out,arg))
+  if(!bitset__get(lab->in,arg-1) && bitset__get(lab->out,arg-1))
     return LAB_OUT;
-  if(!bitset__get(lab->in,arg) && !bitset__get(lab->out,arg))
+  if(!bitset__get(lab->in,arg-1) && !bitset__get(lab->out,arg-1))
     return LAB_UNDEC;
   return LAB_UNLABELED;
 }
@@ -76,147 +76,23 @@ int taas__lab_get_label(struct Labeling* lab, int arg){
  */
 void taas__lab_set_label(struct Labeling* lab, int arg, int label){
   if(label == LAB_IN){
-      bitset__set(lab->in,arg);
-      bitset__unset(lab->out,arg);
+      bitset__set(lab->in,arg-1);
+      bitset__unset(lab->out,arg-1);
       return;
   }
   if(label == LAB_OUT){
-    bitset__unset(lab->in,arg);
-    bitset__set(lab->out,arg);
+    bitset__unset(lab->in,arg-1);
+    bitset__set(lab->out,arg-1);
     return;
   }
   if(label == LAB_UNDEC){
-    bitset__unset(lab->in,arg);
-    bitset__unset(lab->out,arg);
+    bitset__unset(lab->in,arg-1);
+    bitset__unset(lab->out,arg-1);
     return;
   }
-  bitset__set(lab->in,arg);
-  bitset__set(lab->out,arg);
+  bitset__set(lab->in,arg-1);
+  bitset__set(lab->out,arg-1);
   return;
-}
-
-int numDigits(int number)
-{
-    int digits = 0;
-    while (number) {
-        number /= 10;
-        digits++;
-    }
-    return digits;
-}
-
-/**
- * gives a string representation of the labeling in the form
- * "[a1,...,an]" where a1,...,an are the in-labeled arguments.
- */
-char* taas__lab_print(struct Labeling* lab, struct AAF* aaf){
-  int len = 100;
-  char* str = (char*) malloc(len);
-  int sidx = 0;
-  str[sidx++] = '[';
-  int isFirst = 1;
-  for(int idx = bitset__next_set_bit(lab->in,0); idx != -1 ; idx = bitset__next_set_bit(lab->in, idx+1)){
-    // if there is also a bit set in lab->out it means the argument is unlabeled, so skip it
-    if(!lab->twoValued && bitset__get(lab->out,idx))
-      continue;
-    if(sidx + numDigits(idx) + 4 > len){
-      len += 100;
-      str = (char*) realloc(str, len);
-    }
-    if(isFirst != 0){
-      strcpy(&str[sidx], "%d", idx);
-      sidx += numDigits(idx);
-      isFirst = 0;
-    } else{
-      str[sidx++] = ',';
-      strcpy(&str[sidx],"%d", idx);
-      sidx += numDigits(idx);
-    }
-  }
-  str[sidx++] = ']';
-  str[sidx] = '\0';
-  return str;
-}
-
-/**
- * gives a string representation of the labeling in the form
- * "w a1 a2 an" where a1,...,an are the in-labeled arguments.
- */
-char* taas__lab_print_i23(struct Labeling* lab, struct AAF* aaf){
-  int len = 100;
-  char* str = (char*) malloc(len);
-  int sidx = 0;
-  str[sidx++] = 'w';
-  str[sidx++] = ' ';
-  int isFirst = 1;
-  for(int idx = bitset__next_set_bit(lab->in,0); idx != -1 ; idx = bitset__next_set_bit(lab->in, idx+1)){
-    // if there is also a bit set in lab->out it means the argument is unlabeled, so skip it
-    if(!lab->twoValued && bitset__get(lab->out,idx))
-      continue;
-    if(sidx +  numDigits(idx) + 4 > len){
-      len += 100;
-      str = (char*) realloc(str, len);
-    }
-    if(isFirst != 0){
-      strcpy(&str[sidx],"%d", idx);
-      sidx += numDigits(idx);
-      isFirst = 0;
-    } else{
-      str[sidx++] = ' ';
-      strcpy(&str[sidx],"%d", idx);
-      sidx += numDigits(idx);
-    }
-  }
-  str[sidx] = '\0';
-  return str;
-}
-
-/**
- * gives a string representation of the labeling in the form
- * "[a1=l1,...,an=ln]" where a1,...,an are all arguments and li is t
- */
-char* taas__lab_print_as_labeling(struct Labeling* lab, struct AAF* aaf){
-  int len = 100;
-  char* str = (char*) malloc(len);
-  int sidx = 0;
-  str[sidx++] = '[';
-  int isFirst = 1;
-  for(int idx = 0; idx < aaf->number_of_arguments; idx++){
-    if(sidx + numDigits(idx) + 6 > len){
-      len += 100;
-      str = (char*) realloc(str, len);
-    }
-    if(isFirst != 0){
-      strcpy(&str[sidx],"%d", idx);
-      sidx += numDigits(idx);
-      str[sidx++] = '=';
-      if(taas__lab_get_label(lab,idx) == LAB_IN)
-        str[sidx++] = 'I';
-      else if(taas__lab_get_label(lab,idx) == LAB_OUT)
-        str[sidx++] = 'O';
-      else if(taas__lab_get_label(lab,idx) == LAB_UNDEC)
-        str[sidx++] = 'U';
-      else
-        str[sidx++] = 'X';
-      isFirst = 0;
-    } else{
-      str[sidx++] = ',';
-      strcpy(&str[sidx],"%d", idx);
-      sidx += numDigits(idx);
-      str[sidx++] = '=';
-      if(taas__lab_get_label(lab,idx) == LAB_IN)
-        str[sidx++] = 'I';
-      else if(taas__lab_get_label(lab,idx) == LAB_OUT)
-        str[sidx++] = 'O';
-      else if(taas__lab_get_label(lab,idx) == LAB_UNDEC)
-        str[sidx++] = 'U';
-      else
-        str[sidx++] = 'X';
-    }
-  }
-  str[sidx++] = ']';
-  str[sidx] = '\0';
-  return str;
 }
 
 /*
