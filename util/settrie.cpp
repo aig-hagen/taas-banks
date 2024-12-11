@@ -1,9 +1,8 @@
-#include <iostream>
 #include <map>
 #include <set>
+#include <map>
 #include <vector>
 #include <algorithm>
-#include <functional>
 
 template <typename T>
 class SetTrie {

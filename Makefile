@@ -7,7 +7,7 @@ CC	=	clang++
 # =========================== #
 
 TARGET=taas-banks
-CFLAGS	?=	-Wall -DNDEBUG -O3 -std=c++0x
+CFLAGS	?=	-Wall -DNDEBUG -O3 -std=c++17
 LINK	=	$(CC) $(CFLAGS)
 
 all: $(TARGET)

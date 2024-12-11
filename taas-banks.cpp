@@ -5,7 +5,7 @@
  ============================================================================
  Name        : taas-banks.cpp
  Author      : Matthias Thimm
- Version     : 1.0.2
+ Version     : 1.0.3
  Copyright   : GPL3
  Description : The taas-banks solver for abstract argumentation.
 
@@ -302,7 +302,7 @@ void solve(struct TaskSpecification *task, struct AAF* aaf) {
 int main(int argc, char *argv[]){
   // General solver information
 	struct SolverInformation *info = taas__solverinformation(
-			(char*) "taas-banks v1.0.2 (2024-11-29)\nMatthias Thimm (matthias.thimm@fernuni-hagen.de)",
+			(char*) "taas-banks v1.0.3 (2024-12-11)\nMatthias Thimm (matthias.thimm@fernuni-hagen.de)",
 			(char*) "[i23]",
 			(char*) "[DS-ST,DC-ST,BATCH-ST]"
 		);
